@@ -1,6 +1,10 @@
+use anyhow::Result;
+
 mod artifact;
 
 #[tokio::main]
-async fn main() {
-    artifact::fetch_result_files().await;
+async fn main() -> Result<()> {
+    artifact::fetch_result_files().await?;
+
+    Ok(())
 }
