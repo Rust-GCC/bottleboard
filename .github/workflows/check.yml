@@ -1,4 +1,4 @@
-name: bottleboard-check
+name: bottleboard-checks
 
 on:
   pull_request:
@@ -10,22 +10,17 @@ env:
   RUSTFLAGS: '-Dwarnings'
 
 jobs:
-  coding-style:
+  check-build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: [bottlecache, dashboard]
 
     steps:
     - uses: actions/checkout@v2
-    - name: Check the coding style
-      run: cargo fmt -- --check
-
-  check:
-    runs-on: ubuntu-latest
-    needs: coding-style
-
-    steps:
-    - uses: actions/checkout@v2
-    - name: Run Clippy
-      run: cargo clippy
-
-    - name: Run unit tests
-      run: cargo test
+    - name: Check and check
+      run: |
+        cd ${{ matrix.project }}
+        cargo fmt -- --check
+        cargo clippy
+        cargo test
