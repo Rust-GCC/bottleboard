@@ -1,5 +1,5 @@
 [package]
-name = "gccrs-bottleboard"
+name = "bottlecache"
 version = "0.1.0"
 edition = "2021"
 

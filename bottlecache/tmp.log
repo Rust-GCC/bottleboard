@@ -1,0 +1,252 @@
+[src/artifact.rs:23] artifact = WorkflowListArtifact {
+    id: ArtifactId(
+        255431661,
+    ),
+    node_id: "MDg6QXJ0aWZhY3QyNTU0MzE2NjE=",
+    name: "results",
+    size_in_bytes: 330,
+    url: Url {
+        scheme: "https",
+        cannot_be_a_base: false,
+        username: "",
+        password: None,
+        host: Some(
+            Domain(
+                "api.github.com",
+            ),
+        ),
+        port: None,
+        path: "/repos/Rust-GCC/testing/actions/artifacts/255431661",
+        query: None,
+        fragment: None,
+    },
+    archive_download_url: Url {
+        scheme: "https",
+        cannot_be_a_base: false,
+        username: "",
+        password: None,
+        host: Some(
+            Domain(
+                "api.github.com",
+            ),
+        ),
+        port: None,
+        path: "/repos/Rust-GCC/testing/actions/artifacts/255431661/zip",
+        query: None,
+        fragment: None,
+    },
+    expired: false,
+    created_at: 2022-05-30T10:27:54Z,
+    updated_at: 2022-05-30T10:27:55Z,
+    expires_at: 2022-08-28T10:27:49Z,
+}
+[src/artifact.rs:23] artifact = WorkflowListArtifact {
+    id: ArtifactId(
+        247154114,
+    ),
+    node_id: "MDg6QXJ0aWZhY3QyNDcxNTQxMTQ=",
+    name: "results",
+    size_in_bytes: 229,
+    url: Url {
+        scheme: "https",
+        cannot_be_a_base: false,
+        username: "",
+        password: None,
+        host: Some(
+            Domain(
+                "api.github.com",
+            ),
+        ),
+        port: None,
+        path: "/repos/Rust-GCC/testing/actions/artifacts/247154114",
+        query: None,
+        fragment: None,
+    },
+    archive_download_url: Url {
+        scheme: "https",
+        cannot_be_a_base: false,
+        username: "",
+        password: None,
+        host: Some(
+            Domain(
+                "api.github.com",
+            ),
+        ),
+        port: None,
+        path: "/repos/Rust-GCC/testing/actions/artifacts/247154114/zip",
+        query: None,
+        fragment: None,
+    },
+    expired: false,
+    created_at: 2022-05-20T08:56:24Z,
+    updated_at: 2022-05-20T08:56:25Z,
+    expires_at: 2022-08-18T08:56:20Z,
+}
+[src/artifact.rs:23] artifact = WorkflowListArtifact {
+    id: ArtifactId(
+        247152747,
+    ),
+    node_id: "MDg6QXJ0aWZhY3QyNDcxNTI3NDc=",
+    name: "results",
+    size_in_bytes: 229,
+    url: Url {
+        scheme: "https",
+        cannot_be_a_base: false,
+        username: "",
+        password: None,
+        host: Some(
+            Domain(
+                "api.github.com",
+            ),
+        ),
+        port: None,
+        path: "/repos/Rust-GCC/testing/actions/artifacts/247152747",
+        query: None,
+        fragment: None,
+    },
+    archive_download_url: Url {
+        scheme: "https",
+        cannot_be_a_base: false,
+        username: "",
+        password: None,
+        host: Some(
+            Domain(
+                "api.github.com",
+            ),
+        ),
+        port: None,
+        path: "/repos/Rust-GCC/testing/actions/artifacts/247152747/zip",
+        query: None,
+        fragment: None,
+    },
+    expired: false,
+    created_at: 2022-05-20T08:54:23Z,
+    updated_at: 2022-05-20T08:54:23Z,
+    expires_at: 2022-08-18T08:54:19Z,
+}
+[src/artifact.rs:23] artifact = WorkflowListArtifact {
+    id: ArtifactId(
+        247143744,
+    ),
+    node_id: "MDg6QXJ0aWZhY3QyNDcxNDM3NDQ=",
+    name: "results",
+    size_in_bytes: 196,
+    url: Url {
+        scheme: "https",
+        cannot_be_a_base: false,
+        username: "",
+        password: None,
+        host: Some(
+            Domain(
+                "api.github.com",
+            ),
+        ),
+        port: None,
+        path: "/repos/Rust-GCC/testing/actions/artifacts/247143744",
+        query: None,
+        fragment: None,
+    },
+    archive_download_url: Url {
+        scheme: "https",
+        cannot_be_a_base: false,
+        username: "",
+        password: None,
+        host: Some(
+            Domain(
+                "api.github.com",
+            ),
+        ),
+        port: None,
+        path: "/repos/Rust-GCC/testing/actions/artifacts/247143744/zip",
+        query: None,
+        fragment: None,
+    },
+    expired: false,
+    created_at: 2022-05-20T08:42:07Z,
+    updated_at: 2022-05-20T08:42:08Z,
+    expires_at: 2022-08-18T08:42:03Z,
+}
+[src/artifact.rs:23] artifact = WorkflowListArtifact {
+    id: ArtifactId(
+        247134932,
+    ),
+    node_id: "MDg6QXJ0aWZhY3QyNDcxMzQ5MzI=",
+    name: "results",
+    size_in_bytes: 72,
+    url: Url {
+        scheme: "https",
+        cannot_be_a_base: false,
+        username: "",
+        password: None,
+        host: Some(
+            Domain(
+                "api.github.com",
+            ),
+        ),
+        port: None,
+        path: "/repos/Rust-GCC/testing/actions/artifacts/247134932",
+        query: None,
+        fragment: None,
+    },
+    archive_download_url: Url {
+        scheme: "https",
+        cannot_be_a_base: false,
+        username: "",
+        password: None,
+        host: Some(
+            Domain(
+                "api.github.com",
+            ),
+        ),
+        port: None,
+        path: "/repos/Rust-GCC/testing/actions/artifacts/247134932/zip",
+        query: None,
+        fragment: None,
+    },
+    expired: false,
+    created_at: 2022-05-20T08:31:55Z,
+    updated_at: 2022-05-20T08:31:56Z,
+    expires_at: 2022-08-18T08:31:51Z,
+}
+[src/artifact.rs:23] artifact = WorkflowListArtifact {
+    id: ArtifactId(
+        247127269,
+    ),
+    node_id: "MDg6QXJ0aWZhY3QyNDcxMjcyNjk=",
+    name: "results",
+    size_in_bytes: 76,
+    url: Url {
+        scheme: "https",
+        cannot_be_a_base: false,
+        username: "",
+        password: None,
+        host: Some(
+            Domain(
+                "api.github.com",
+            ),
+        ),
+        port: None,
+        path: "/repos/Rust-GCC/testing/actions/artifacts/247127269",
+        query: None,
+        fragment: None,
+    },
+    archive_download_url: Url {
+        scheme: "https",
+        cannot_be_a_base: false,
+        username: "",
+        password: None,
+        host: Some(
+            Domain(
+                "api.github.com",
+            ),
+        ),
+        port: None,
+        path: "/repos/Rust-GCC/testing/actions/artifacts/247127269/zip",
+        query: None,
+        fragment: None,
+    },
+    expired: false,
+    created_at: 2022-05-20T08:22:01Z,
+    updated_at: 2022-05-20T08:22:02Z,
+    expires_at: 2022-08-18T08:21:58Z,
+}
