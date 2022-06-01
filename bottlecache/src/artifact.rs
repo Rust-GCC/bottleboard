@@ -21,20 +21,16 @@ pub async fn download_artifact(
     Ok(Archive(archive.to_vec()))
 }
 
-pub async fn extract_json(artifact: Archive) -> Result<(), zip::result::ZipError> {
+pub async fn extract_json(artifact: Archive) -> Result<Vec<u8>, zip::result::ZipError> {
     let reader = BufReader::new(Cursor::new(artifact.0));
     let mut zip = zip::ZipArchive::new(reader)?;
 
-    for i in 0..zip.len() {
-        let mut file = zip.by_index(i)?;
+    // We're always looking for the first file
+    let mut file = zip.by_index(0)?;
+    let mut bytes = vec![];
+    std::io::copy(&mut file, &mut bytes)?;
 
-        // FIXME: Remove, for debugging only
-        {
-            std::io::copy(&mut file, &mut std::io::stdout())?;
-        }
-    }
-
-    Ok(())
+    Ok(bytes)
 }
 
 // FIXME: Add doc
