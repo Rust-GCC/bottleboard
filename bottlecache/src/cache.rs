@@ -61,8 +61,7 @@ impl Cache {
                 Ok(json) => {
                     let path = self
                         .location
-                        .join(PathBuf::from(format!("{}-{}", json.name, json.date)));
-                    dbg!(&path);
+                        .join(PathBuf::from(format!("{}-{}.json", json.name, json.date)));
                     eprintln!("valid json! Writing to `{}`", path.display());
                     json.write_to(&path)?;
                 }

@@ -2,14 +2,14 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-use chrono::prelude::{DateTime, Utc};
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
 pub struct TestsuiteResult {
     pub name: String,
     pub commit: String,
-    pub date: DateTime<Utc>,
+    pub date: NaiveDate,
 }
 
 impl TestsuiteResult {
