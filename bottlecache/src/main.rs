@@ -38,7 +38,11 @@ async fn index(state: &State<Mutex<Cache>>) -> Status {
 #[rocket::launch]
 async fn rocket() -> _ {
     let args = Args::from_args();
-    let cache = Mutex::new(Cache::new(args.token, args.cache));
+
+    let mut cache = Cache::new(args.token, args.cache);
+    cache.data().await.expect("couldn't initialize cache");
+
+    let cache = Mutex::new(cache);
 
     rocket::build()
         .mount("/", rocket::routes![index])
