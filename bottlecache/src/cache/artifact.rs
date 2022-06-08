@@ -1,7 +1,10 @@
 use std::io::{BufReader, Cursor};
 
 use octocrab::{
-    actions::ActionsHandler, models::ArtifactId, params::actions::ArchiveFormat, OctocrabBuilder,
+    actions::ActionsHandler,
+    models::{ArtifactId, RunId},
+    params::actions::ArchiveFormat,
+    Octocrab, OctocrabBuilder,
 };
 
 // FIXME: Add proper Artifact structure?
@@ -9,8 +12,12 @@ use octocrab::{
 #[derive(Debug)]
 pub struct Archive(Vec<u8>);
 
+pub struct Fetcher {
+    instance: Octocrab,
+}
+
 // FIXME: Add documentation
-pub async fn download_artifact(
+async fn download_artifact(
     instance: &ActionsHandler<'_>,
     artifact: ArtifactId,
 ) -> Result<Archive, octocrab::Error> {
@@ -19,6 +26,55 @@ pub async fn download_artifact(
         .await?;
 
     Ok(Archive(archive.to_vec()))
+}
+
+impl Fetcher {
+    pub fn try_new(access_token: Option<String>) -> Result<Fetcher, octocrab::Error> {
+        let builder = OctocrabBuilder::new();
+        let builder = match access_token {
+            None => builder,
+            Some(tok) => builder.personal_token(tok),
+        };
+
+        let instance = builder.build()?;
+
+        Ok(Fetcher { instance })
+    }
+
+    // FIXME: Add doc
+    pub async fn runs(&self) -> Result<Vec<RunId>, octocrab::Error> {
+        let page = self
+            .instance
+            .workflows("rust-gcc", "testing")
+            .list_runs("nightly_run.yml")
+            .send()
+            .await?;
+
+        Ok(page.into_iter().map(|run| run.id).collect())
+    }
+
+    // FIXME: Add doc
+    // FIXME: Return the actual files
+    pub async fn result_files(
+        &self,
+        runs: &[RunId],
+    ) -> Result<Vec<(RunId, Archive)>, octocrab::Error> {
+        let actions = self.instance.actions();
+        let mut archives = vec![];
+
+        for run in runs {
+            let list = actions.list_workflow_run_artifacts("rust-gcc", "testing", *run);
+            if let Some(page) = list.send().await?.value {
+                for artifact in page {
+                    if artifact.name.ends_with(".json") {
+                        archives.push((*run, download_artifact(&actions, artifact.id).await?));
+                    }
+                }
+            }
+        }
+
+        Ok(archives)
+    }
 }
 
 pub async fn extract_json(artifact: Archive) -> Result<Vec<u8>, zip::result::ZipError> {
@@ -31,42 +87,4 @@ pub async fn extract_json(artifact: Archive) -> Result<Vec<u8>, zip::result::Zip
     std::io::copy(&mut file, &mut bytes)?;
 
     Ok(bytes)
-}
-
-// FIXME: Add doc
-// FIXME: Rename
-// FIXME: Probably want that in a method actually
-// FIXME: Return the actual files
-pub async fn fetch_result_files(
-    access_token: Option<String>,
-) -> Result<Vec<Archive>, octocrab::Error> {
-    let builder = OctocrabBuilder::new();
-    let builder = match access_token {
-        None => builder,
-        Some(tok) => builder.personal_token(tok),
-    };
-
-    let instance = builder.build()?;
-    let actions = instance.actions();
-
-    let runs = instance
-        .workflows("rust-gcc", "testing")
-        .list_runs("nightly_run.yml")
-        .send()
-        .await?;
-
-    let mut archives = vec![];
-
-    for run in runs {
-        let list = actions.list_workflow_run_artifacts("rust-gcc", "testing", run.id);
-        if let Some(page) = list.send().await?.value {
-            for artifact in page {
-                if artifact.name.ends_with(".json") {
-                    archives.push(download_artifact(&actions, artifact.id).await?);
-                }
-            }
-        }
-    }
-
-    Ok(archives)
 }

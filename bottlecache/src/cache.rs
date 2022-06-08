@@ -1,12 +1,16 @@
 mod artifact;
 
+use std::collections::HashSet;
 use std::path::PathBuf;
 use std::time::{SystemTime, SystemTimeError};
 
 use chrono::Duration;
+use octocrab::models::RunId;
 use thiserror::Error;
 
 use crate::json::TestsuiteResult;
+
+use self::artifact::Fetcher;
 
 #[derive(Debug, Error)]
 pub enum CacheError {
@@ -25,20 +29,22 @@ pub struct Data(pub () /* FIXME: Store a proper type here */);
 
 // FIXME: We probably want to keep the last variation in a cache type or something
 pub struct Cache {
-    token: Option<String>,
+    fetcher: Fetcher,
     location: PathBuf,
     last_date: SystemTime,
-    data: Option<Data>,
+    cached_data: Option<Data>,
+    cached_runs: HashSet<RunId>,
 }
 
 impl Cache {
-    pub fn new(token: Option<String>, location: PathBuf) -> Cache {
-        Cache {
-            token,
+    pub fn try_new(token: Option<String>, location: PathBuf) -> Result<Cache, octocrab::Error> {
+        Ok(Cache {
+            fetcher: Fetcher::try_new(token)?,
             location,
             last_date: SystemTime::UNIX_EPOCH,
-            data: None,
-        }
+            cached_data: None,
+            cached_runs: HashSet::new(),
+        })
     }
 
     fn is_invalidated(&self) -> Result<bool, CacheError> {
@@ -47,14 +53,26 @@ impl Cache {
 
         // UNWRAP: If we have an issue here, this is a programmer error: We want
         // the program to crash as this should never happen
-        Ok(age > Duration::hours(24).to_std().unwrap() || self.data.is_none())
+        Ok(age > Duration::hours(24).to_std().unwrap() || self.cached_data.is_none())
     }
 
     async fn update(&mut self) -> Result<(), CacheError> {
-        let token = self.token.clone();
-        let archives = artifact::fetch_result_files(token).await?;
-        for archive in archives {
+        let runs = self.fetcher.runs().await?;
+        let runs: Vec<RunId> = runs
+            .into_iter()
+            .filter(|run| !self.cached_runs.contains(run))
+            .collect();
+
+        dbg!(&runs);
+
+        let archives = self.fetcher.result_files(&runs).await?;
+
+        for (run, archive) in archives {
+            // FIXME: How do we avoid fetching runs that do not provide any archives?
+            self.cached_runs.insert(run);
+
             let bytes = artifact::extract_json(archive).await?;
+            dbg!(String::from_utf8_lossy(bytes.as_slice()));
             let json = TestsuiteResult::from_bytes(bytes.as_slice());
 
             match json {
@@ -69,10 +87,11 @@ impl Cache {
             }
         }
 
-        self.last_date = SystemTime::now();
+        // FIXME: Uncomment
+        // self.last_date = SystemTime::now();
 
         // FIXME: Do something here for real
-        self.data = Some(Data(()));
+        self.cached_data = Some(Data(()));
 
         Ok(())
     }
@@ -89,6 +108,6 @@ impl Cache {
         // no data or none has been fetched/written to disk, then the `update`
         // function will have returned an error which would have been propagated
         // already.
-        Ok(self.data.clone().unwrap())
+        Ok(self.cached_data.clone().unwrap())
     }
 }

@@ -39,8 +39,8 @@ async fn index(state: &State<Mutex<Cache>>) -> Status {
 async fn rocket() -> _ {
     let args = Args::from_args();
 
-    let mut cache = Cache::new(args.token, args.cache);
-    cache.data().await.expect("couldn't initialize cache");
+    let mut cache = Cache::try_new(args.token, args.cache).expect("couldn't create cache");
+    cache.data().await.expect("couldn't fetch initial cache");
 
     let cache = Mutex::new(cache);
 
