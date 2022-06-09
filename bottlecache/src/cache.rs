@@ -1,7 +1,6 @@
 mod artifact;
 
 use std::collections::HashSet;
-use std::path::PathBuf;
 use std::time::{SystemTime, SystemTimeError};
 
 use chrono::Duration;
@@ -63,9 +62,6 @@ impl Cache {
         let archives = self.fetcher.result_files(&runs).await?;
 
         for (run, archive) in archives {
-            // FIXME: How do we avoid fetching runs that do not provide any archives?
-            self.cached_runs.insert(run);
-
             let bytes = artifact::extract_json(archive).await?;
             dbg!(String::from_utf8_lossy(bytes.as_slice()));
             let json = TestsuiteResult::from_bytes(bytes.as_slice());
@@ -77,13 +73,13 @@ impl Cache {
                         json.name, json.date
                     );
                     self.cached_data.insert(json);
+                    self.cached_runs.insert(run);
                 }
                 Err(e) => eprintln!("invalid json file... skipping it. Reason: `{}`", e),
             }
         }
 
-        // FIXME: Uncomment
-        // self.last_date = SystemTime::now();
+        self.last_date = SystemTime::now();
 
         Ok(())
     }
