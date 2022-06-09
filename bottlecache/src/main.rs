@@ -77,7 +77,11 @@ async fn rocket() -> _ {
 
     let cache = Mutex::new(cache);
 
+    // FIXME: Should we unwrap here?
+    let cors = rocket_cors::CorsOptions::default().to_cors().unwrap();
+
     rocket::build()
+        .attach(cors)
         .mount(
             "/",
             rocket::routes![testsuites, testsuite_by_key, testsuite_by_key_date],
