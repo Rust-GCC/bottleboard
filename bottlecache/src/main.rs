@@ -1,13 +1,13 @@
 mod cache;
 mod error;
-mod json;
 
 use cache::Cache;
 use chrono::NaiveDate;
-use json::TestsuiteResult;
 use rocket::{request::FromParam, serde::json::Json, State};
 use structopt::StructOpt;
 use tokio::sync::Mutex;
+
+use common::TestsuiteResult;
 
 #[derive(StructOpt, Debug)]
 pub struct Args {

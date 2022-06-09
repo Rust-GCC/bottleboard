@@ -7,7 +7,7 @@ use chrono::Duration;
 use octocrab::models::RunId;
 use thiserror::Error;
 
-use crate::json::TestsuiteResult;
+use common::TestsuiteResult;
 
 use self::artifact::Fetcher;
 
