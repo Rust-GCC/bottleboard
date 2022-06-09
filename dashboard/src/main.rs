@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use chrono::{NaiveDate, Utc};
+use chrono::NaiveDate;
 use plotters::{coord::Shift, prelude::*};
 use plotters_canvas::CanvasBackend;
 use wasm_bindgen::JsCast;
@@ -104,8 +104,14 @@ fn graph(testsuites: &[TestsuiteResult]) {
     let root = get_root();
     root.fill(&WHITE).unwrap();
 
-    let range = get_date_range(testsuites);
-    let limits = get_limits(testsuites);
+    let testsuites: Vec<TestsuiteResult> = testsuites
+        .iter()
+        .filter(|run| run.name == "blake3")
+        .cloned()
+        .collect();
+
+    let range = get_date_range(&testsuites);
+    let limits = get_limits(&testsuites);
 
     let mut chart = ChartBuilder::on(&root)
         .caption("testsuites", ("sans-serif", 50).into_font())
@@ -128,7 +134,8 @@ fn graph(testsuites: &[TestsuiteResult]) {
             &GREEN,
         ))
         .unwrap()
-        .label("passes");
+        .label("passes")
+        .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &GREEN));
 
     chart
         .draw_series(LineSeries::new(
@@ -142,7 +149,8 @@ fn graph(testsuites: &[TestsuiteResult]) {
             &RED,
         ))
         .unwrap()
-        .label("failures");
+        .label("failures")
+        .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
 
     chart
         .draw_series(LineSeries::new(
@@ -153,10 +161,11 @@ fn graph(testsuites: &[TestsuiteResult]) {
 
                 (i, to_show.results.tests)
             }),
-            &BLUE,
+            &BLACK,
         ))
         .unwrap()
-        .label("total");
+        .label("total test cases")
+        .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &BLACK));
 
     chart
         .configure_series_labels()
