@@ -24,25 +24,20 @@ pub enum CacheError {
     Disk(#[from] std::io::Error),
 }
 
-#[derive(Clone)]
-pub struct Data(pub () /* FIXME: Store a proper type here */);
-
 // FIXME: We probably want to keep the last variation in a cache type or something
 pub struct Cache {
     fetcher: Fetcher,
-    location: PathBuf,
     last_date: SystemTime,
-    cached_data: Option<Data>,
+    cached_data: HashSet<TestsuiteResult>,
     cached_runs: HashSet<RunId>,
 }
 
 impl Cache {
-    pub fn try_new(token: Option<String>, location: PathBuf) -> Result<Cache, octocrab::Error> {
+    pub fn try_new(token: Option<String>) -> Result<Cache, octocrab::Error> {
         Ok(Cache {
             fetcher: Fetcher::try_new(token)?,
-            location,
             last_date: SystemTime::UNIX_EPOCH,
-            cached_data: None,
+            cached_data: HashSet::new(),
             cached_runs: HashSet::new(),
         })
     }
@@ -53,7 +48,7 @@ impl Cache {
 
         // UNWRAP: If we have an issue here, this is a programmer error: We want
         // the program to crash as this should never happen
-        Ok(age > Duration::hours(24).to_std().unwrap() || self.cached_data.is_none())
+        Ok(age > Duration::hours(24).to_std().unwrap())
     }
 
     async fn update(&mut self) -> Result<(), CacheError> {
@@ -77,11 +72,11 @@ impl Cache {
 
             match json {
                 Ok(json) => {
-                    let path = self
-                        .location
-                        .join(PathBuf::from(format!("{}-{}.json", json.name, json.date)));
-                    eprintln!("valid json! Writing to `{}`", path.display());
-                    json.write_to(&path)?;
+                    eprintln!(
+                        "valid json: {} ({}) ! Storing in cache",
+                        json.name, json.date
+                    );
+                    self.cached_data.insert(json);
                 }
                 Err(e) => eprintln!("invalid json file... skipping it. Reason: `{}`", e),
             }
@@ -90,13 +85,10 @@ impl Cache {
         // FIXME: Uncomment
         // self.last_date = SystemTime::now();
 
-        // FIXME: Do something here for real
-        self.cached_data = Some(Data(()));
-
         Ok(())
     }
 
-    pub async fn data(&mut self) -> Result<Data, CacheError> {
+    pub async fn data(&mut self) -> Result<HashSet<TestsuiteResult>, CacheError> {
         if self.is_invalidated()? {
             eprintln!("updating cache");
             self.update().await?;
@@ -108,6 +100,6 @@ impl Cache {
         // no data or none has been fetched/written to disk, then the `update`
         // function will have returned an error which would have been propagated
         // already.
-        Ok(self.cached_data.clone().unwrap())
+        Ok(self.cached_data.clone())
     }
 }

@@ -5,14 +5,14 @@ use std::path::Path;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone, Hash, PartialEq, Eq)]
 pub struct RunResults {
     pub tests: u64,
     pub passes: u64,
     pub failures: u64,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone, Hash, PartialEq, Eq)]
 pub struct TestsuiteResult {
     pub name: String,
     pub commit: String,

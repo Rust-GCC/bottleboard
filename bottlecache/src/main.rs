@@ -13,8 +13,6 @@ use tokio::sync::Mutex;
 pub struct Args {
     #[structopt(short, long, help = "Personal access token if available")]
     token: Option<String>,
-    #[structopt(short, long, help = "Directory in which to store the results")]
-    cache: PathBuf,
 }
 
 #[rocket::get("/")]
@@ -39,7 +37,7 @@ async fn index(state: &State<Mutex<Cache>>) -> Status {
 async fn rocket() -> _ {
     let args = Args::from_args();
 
-    let mut cache = Cache::try_new(args.token, args.cache).expect("couldn't create cache");
+    let mut cache = Cache::try_new(args.token).expect("couldn't create cache");
     cache.data().await.expect("couldn't fetch initial cache");
 
     let cache = Mutex::new(cache);
