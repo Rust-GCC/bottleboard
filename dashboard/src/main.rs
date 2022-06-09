@@ -1,33 +1,29 @@
-use chrono::NaiveDate;
+use std::ops::Range;
+
+use chrono::{NaiveDate, Utc};
 use plotters::{coord::Shift, prelude::*};
 use plotters_canvas::CanvasBackend;
-use structopt::StructOpt;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
+use wasm_rs_dbg::dbg;
 use yew::prelude::*;
 
 use common::TestsuiteResult;
-
-#[derive(Debug, StructOpt)]
-struct Args {
-    #[structopt(short, long, help = "URL to make API calls to")]
-    api_url: String,
-}
 
 #[derive(Debug)]
 enum Error {
     CacheAPI,
 }
 
-impl From<reqwest::Error> for Error {
-    fn from(_: reqwest::Error) -> Self {
+impl From<reqwasm::Error> for Error {
+    fn from(_: reqwasm::Error) -> Self {
         Error::CacheAPI
     }
 }
 
-async fn fetch_testsuites(base_url: &str) -> Result<Vec<TestsuiteResult>, reqwest::Error> {
+async fn fetch_testsuites(base_url: &str) -> Result<Vec<TestsuiteResult>, reqwasm::Error> {
     let url = format!("{}/api/testsuites", base_url);
-    let response = reqwest::get(url).await?;
+    let response = reqwasm::http::Request::get(&url).send().await?;
     let testsuites: Vec<TestsuiteResult> = response.json().await?;
 
     Ok(testsuites)
@@ -59,6 +55,7 @@ fn get_root() -> DrawingArea<CanvasBackend, Shift> {
         .into_drawing_area()
 }
 
+#[derive(Clone, Copy)]
 struct DateRange(NaiveDate, NaiveDate);
 
 impl Iterator for DateRange {
@@ -66,8 +63,8 @@ impl Iterator for DateRange {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.0 <= self.1 {
-            let next = self.0.succ();
-            self.0 = next;
+            let next = self.0;
+            self.0 = next.succ();
 
             Some(next)
         } else {
@@ -93,35 +90,73 @@ fn get_date_range(testsuites: &[TestsuiteResult]) -> DateRange {
     DateRange(lo, hi)
 }
 
+fn get_limits(testsuites: &[TestsuiteResult]) -> Range<u64> {
+    // FIXME: Don't unwrap here
+    0..testsuites
+        .iter()
+        .map(|run| run.results.tests)
+        .max()
+        .unwrap()
+        + 1 // for extra comfortable viewing
+}
+
 fn graph(testsuites: &[TestsuiteResult]) {
     let root = get_root();
     root.fill(&WHITE).unwrap();
 
     let range = get_date_range(testsuites);
+    let limits = get_limits(testsuites);
 
     let mut chart = ChartBuilder::on(&root)
         .caption("testsuites", ("sans-serif", 50).into_font())
         .margin(5u32)
         .x_label_area_size(30u32)
         .y_label_area_size(30u32)
-        .build_cartesian_2d(0u64..5u64, 0u64..5u64)
+        .build_cartesian_2d(0..testsuites.len(), limits)
         .unwrap();
 
     chart.configure_mesh().draw().unwrap();
+    chart
+        .draw_series(LineSeries::new(
+            (range).enumerate().map(|(i, date)| {
+                // There will always be a unique run per day
+                // FIXME: Right?
+                let to_show = testsuites.iter().find(|run| run.date == date).unwrap();
+
+                (i, to_show.results.passes)
+            }),
+            &GREEN,
+        ))
+        .unwrap()
+        .label("passes");
 
     chart
         .draw_series(LineSeries::new(
-            (range).map(|date| {
+            (range).enumerate().map(|(i, date)| {
                 // There will always be a unique run per day
+                // FIXME: Right?
                 let to_show = testsuites.iter().find(|run| run.date == date).unwrap();
 
-                (to_show.results.passes, to_show.results.passes)
+                (i, to_show.results.failures)
             }),
             &RED,
         ))
         .unwrap()
-        .label("y = x^2")
-        .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
+        .label("failures");
+
+    chart
+        .draw_series(LineSeries::new(
+            (range).enumerate().map(|(i, date)| {
+                // There will always be a unique run per day
+                // FIXME: Right?
+                let to_show = testsuites.iter().find(|run| run.date == date).unwrap();
+
+                (i, to_show.results.tests)
+            }),
+            &BLUE,
+        ))
+        .unwrap()
+        .label("total");
 
     chart
         .configure_series_labels()
@@ -132,13 +167,17 @@ fn graph(testsuites: &[TestsuiteResult]) {
 }
 
 fn main() {
-    let args = Args::from_args();
+    // FIXME: Use environment variable instead?
+    let url = "http://127.0.0.1:8000";
+    dbg!(url);
+
+    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
     yew::start_app::<App>();
 
     spawn_local(async move {
         // FIXME: Can we unwrap here?
-        let testsuites = fetch_testsuites(&args.api_url).await.unwrap();
+        let testsuites = fetch_testsuites(url).await.unwrap();
 
         graph(&testsuites);
     });
