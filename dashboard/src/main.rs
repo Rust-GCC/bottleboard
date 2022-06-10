@@ -4,9 +4,9 @@ use chrono::NaiveDate;
 use plotters::{coord::Shift, prelude::*};
 use plotters_canvas::CanvasBackend;
 use wasm_bindgen::JsCast;
-use wasm_bindgen_futures::spawn_local;
 use wasm_rs_dbg::dbg;
 
+use web_sys::HtmlCanvasElement;
 use yew::prelude::*;
 
 use common::TestsuiteResult;
@@ -47,8 +47,89 @@ enum CacheMsg {
 
 struct CacheModel {
     url: &'static str,
+    canvas: NodeRef,
     keys: Vec<String>,
     results: Vec<TestsuiteResult>,
+}
+
+impl CacheModel {
+    fn graph(&self, backend: CanvasBackend) {
+        let testsuites = &self.results;
+
+        dbg!(testsuites);
+
+        if testsuites.is_empty() {
+            dbg!("empty testsuites");
+            return;
+        }
+
+        let root = backend.into_drawing_area();
+        root.fill(&WHITE).unwrap();
+
+        let range = get_date_range(testsuites);
+        let limits = get_limits(testsuites);
+
+        let mut chart = ChartBuilder::on(&root)
+            .caption("testsuites", ("sans-serif", 50).into_font())
+            .margin(5u32)
+            .x_label_area_size(30u32)
+            .y_label_area_size(30u32)
+            .build_cartesian_2d(0..testsuites.len(), limits)
+            .unwrap();
+
+        chart.configure_mesh().draw().unwrap();
+        chart
+            .draw_series(LineSeries::new(
+                (range).enumerate().map(|(i, date)| {
+                    // There will always be a unique run per day
+                    // FIXME: Right?
+                    let to_show = testsuites.iter().find(|run| run.date == date).unwrap();
+
+                    (i, to_show.results.passes)
+                }),
+                &GREEN,
+            ))
+            .unwrap()
+            .label("passes")
+            .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &GREEN));
+
+        chart
+            .draw_series(LineSeries::new(
+                (range).enumerate().map(|(i, date)| {
+                    // There will always be a unique run per day
+                    // FIXME: Right?
+                    let to_show = testsuites.iter().find(|run| run.date == date).unwrap();
+
+                    (i, to_show.results.failures)
+                }),
+                &RED,
+            ))
+            .unwrap()
+            .label("failures")
+            .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
+
+        chart
+            .draw_series(LineSeries::new(
+                (range).enumerate().map(|(i, date)| {
+                    // There will always be a unique run per day
+                    // FIXME: Right?
+                    let to_show = testsuites.iter().find(|run| run.date == date).unwrap();
+
+                    (i, to_show.results.tests)
+                }),
+                &BLACK,
+            ))
+            .unwrap()
+            .label("total test cases")
+            .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &BLACK));
+
+        chart
+            .configure_series_labels()
+            .background_style(&WHITE.mix(0.8))
+            .border_style(&BLACK)
+            .draw()
+            .unwrap();
+    }
 }
 
 impl Component for CacheModel {
@@ -63,6 +144,7 @@ impl Component for CacheModel {
         CacheModel {
             // FIXME: Use environment variable instead?
             url: "http://127.0.0.1:8000",
+            canvas: NodeRef::default(),
             keys: vec![],
             results: vec![],
         }
@@ -101,6 +183,15 @@ impl Component for CacheModel {
         }
     }
 
+    fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
+        let canvas = self.canvas.cast::<HtmlCanvasElement>().unwrap();
+        canvas.set_width(500);
+        canvas.set_height(300);
+
+        let backend: CanvasBackend = CanvasBackend::with_canvas_object(canvas).unwrap();
+        self.graph(backend);
+    }
+
     fn view(&self, ctx: &Context<Self>) -> Html {
         let items: Html = self.keys.iter().map(|key| {
             let key = String::from(key);
@@ -112,9 +203,12 @@ impl Component for CacheModel {
         }).collect();
 
         html! {
-            <ul class="item-list">
-            { items }
-            </ul>
+            <div>
+                <ul class="item-list">
+                { items }
+                </ul>
+                <canvas ref={ self.canvas.clone() } />
+            </div>
         }
     }
 }
@@ -187,81 +281,6 @@ fn get_limits(testsuites: &[TestsuiteResult]) -> Range<u64> {
         .max()
         .unwrap()
         + 1 // for extra comfortable viewing
-}
-
-fn graph(testsuites: &[TestsuiteResult]) {
-    let root = get_root();
-    root.fill(&WHITE).unwrap();
-
-    let testsuites: Vec<TestsuiteResult> = testsuites
-        .iter()
-        .filter(|run| run.name == "blake3")
-        .cloned()
-        .collect();
-
-    let range = get_date_range(&testsuites);
-    let limits = get_limits(&testsuites);
-
-    let mut chart = ChartBuilder::on(&root)
-        .caption("testsuites", ("sans-serif", 50).into_font())
-        .margin(5u32)
-        .x_label_area_size(30u32)
-        .y_label_area_size(30u32)
-        .build_cartesian_2d(0..testsuites.len(), limits)
-        .unwrap();
-
-    chart.configure_mesh().draw().unwrap();
-    chart
-        .draw_series(LineSeries::new(
-            (range).enumerate().map(|(i, date)| {
-                // There will always be a unique run per day
-                // FIXME: Right?
-                let to_show = testsuites.iter().find(|run| run.date == date).unwrap();
-
-                (i, to_show.results.passes)
-            }),
-            &GREEN,
-        ))
-        .unwrap()
-        .label("passes")
-        .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &GREEN));
-
-    chart
-        .draw_series(LineSeries::new(
-            (range).enumerate().map(|(i, date)| {
-                // There will always be a unique run per day
-                // FIXME: Right?
-                let to_show = testsuites.iter().find(|run| run.date == date).unwrap();
-
-                (i, to_show.results.failures)
-            }),
-            &RED,
-        ))
-        .unwrap()
-        .label("failures")
-        .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
-
-    chart
-        .draw_series(LineSeries::new(
-            (range).enumerate().map(|(i, date)| {
-                // There will always be a unique run per day
-                // FIXME: Right?
-                let to_show = testsuites.iter().find(|run| run.date == date).unwrap();
-
-                (i, to_show.results.tests)
-            }),
-            &BLACK,
-        ))
-        .unwrap()
-        .label("total test cases")
-        .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &BLACK));
-
-    chart
-        .configure_series_labels()
-        .background_style(&WHITE.mix(0.8))
-        .border_style(&BLACK)
-        .draw()
-        .unwrap();
 }
 
 fn main() {
