@@ -6,11 +6,12 @@ use plotters_canvas::CanvasBackend;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use wasm_rs_dbg::dbg;
+
 use yew::prelude::*;
 
 use common::TestsuiteResult;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Error {
     CacheAPI,
 }
@@ -21,12 +22,101 @@ impl From<reqwasm::Error> for Error {
     }
 }
 
-async fn fetch_testsuites(base_url: &str) -> Result<Vec<TestsuiteResult>, reqwasm::Error> {
+async fn fetch_testsuites(base_url: &str) -> Result<Vec<String>, reqwasm::Error> {
     let url = format!("{}/api/testsuites", base_url);
+    let response = reqwasm::http::Request::get(&url).send().await?;
+    let testsuites: Vec<String> = response.json().await?;
+
+    Ok(testsuites)
+}
+
+async fn fetch_results(base_url: &str, key: &str) -> Result<Vec<TestsuiteResult>, reqwasm::Error> {
+    let url = format!("{}/api/testsuites/{}", base_url, key);
     let response = reqwasm::http::Request::get(&url).send().await?;
     let testsuites: Vec<TestsuiteResult> = response.json().await?;
 
     Ok(testsuites)
+}
+
+enum CacheMsg {
+    FetchKeys,
+    UpdateKeys(Vec<String>),
+    FetchKeyResult(String),
+    UpdateResults(Vec<TestsuiteResult>),
+}
+
+struct CacheModel {
+    url: &'static str,
+    keys: Vec<String>,
+    results: Vec<TestsuiteResult>,
+}
+
+impl Component for CacheModel {
+    type Message = CacheMsg;
+
+    // FIXME: Should we store anything here?
+    type Properties = ();
+
+    fn create(ctx: &Context<Self>) -> Self {
+        ctx.link().send_message(CacheMsg::FetchKeys);
+
+        CacheModel {
+            // FIXME: Use environment variable instead?
+            url: "http://127.0.0.1:8000",
+            keys: vec![],
+            results: vec![],
+        }
+    }
+
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        match msg {
+            CacheMsg::FetchKeys => {
+                let url = String::from(self.url);
+                ctx.link().send_future(async move {
+                    // FIXME: No unwrap
+                    let keys = fetch_testsuites(&url).await.unwrap();
+                    dbg!(&keys);
+                    CacheMsg::UpdateKeys(keys)
+                });
+                true
+            }
+            CacheMsg::FetchKeyResult(key) => {
+                let url = String::from(self.url);
+                ctx.link().send_future(async move {
+                    // FIXME: No unwrap
+                    let results = fetch_results(&url, &key).await.unwrap();
+                    dbg!(&results);
+                    CacheMsg::UpdateResults(results)
+                });
+                true
+            }
+            CacheMsg::UpdateKeys(keys) => {
+                self.keys = keys;
+                true
+            }
+            CacheMsg::UpdateResults(results) => {
+                self.results = results;
+                true
+            }
+        }
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let items: Html = self.keys.iter().map(|key| {
+            let key = String::from(key);
+            let button_text = key.clone();
+            html! {
+                <button onclick={ctx.link().callback(move |_| CacheMsg::FetchKeyResult(key.clone()))}> { button_text } </button>
+
+            }
+        }).collect();
+
+        html! {
+            <ul class="item-list">
+            { items }
+            </ul>
+        }
+    }
 }
 
 #[function_component(App)]
@@ -40,7 +130,6 @@ fn app() -> Html {
     }
 }
 
-// FIXME: Ugly ass return type
 fn get_root() -> DrawingArea<CanvasBackend, Shift> {
     // FIXME: Don't unwrap
     let document = web_sys::window().unwrap().document().unwrap();
@@ -176,18 +265,7 @@ fn graph(testsuites: &[TestsuiteResult]) {
 }
 
 fn main() {
-    // FIXME: Use environment variable instead?
-    let url = "http://127.0.0.1:8000";
-    dbg!(url);
-
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
-    yew::start_app::<App>();
-
-    spawn_local(async move {
-        // FIXME: Can we unwrap here?
-        let testsuites = fetch_testsuites(url).await.unwrap();
-
-        graph(&testsuites);
-    });
+    yew::start_app::<CacheModel>();
 }
