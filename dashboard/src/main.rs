@@ -70,7 +70,7 @@ impl CacheModel {
         let limits = get_limits(testsuites);
 
         let mut chart = ChartBuilder::on(&root)
-            .caption(&self.current_key, ("sans-serif", 50).into_font())
+            .caption(&self.current_key, ("sans-serif", 20).into_font())
             .margin(5u32)
             .x_label_area_size(30u32)
             .y_label_area_size(30u32)
@@ -78,49 +78,62 @@ impl CacheModel {
             .unwrap();
 
         chart.configure_mesh().draw().unwrap();
+        let mut i = -1;
+
         chart
             .draw_series(LineSeries::new(
-                (range).enumerate().map(|(i, date)| {
+                (range).filter_map(|date| {
                     // There will always be a unique run per day
                     // FIXME: Right?
-                    let to_show = testsuites.iter().find(|run| run.date == date).unwrap();
+                    // There will always be a unique run per day
+                    // FIXME: Right?
+                    let to_show = testsuites.iter().find(|run| run.date == date)?;
+                    i += 1;
 
-                    (i, to_show.results.passes)
+                    Some((i as usize, to_show.results.passes))
                 }),
                 &GREEN,
             ))
             .unwrap()
             .label("passes")
             .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &GREEN));
+        i = -1;
 
         chart
             .draw_series(LineSeries::new(
-                (range).enumerate().map(|(i, date)| {
+                (range).filter_map(|date| {
                     // There will always be a unique run per day
                     // FIXME: Right?
-                    let to_show = testsuites.iter().find(|run| run.date == date).unwrap();
+                    // There will always be a unique run per day
+                    // FIXME: Right?
+                    let to_show = testsuites.iter().find(|run| run.date == date)?;
+                    i += 1;
 
-                    (i, to_show.results.failures)
+                    Some((i as usize, to_show.results.failures))
                 }),
                 &RED,
             ))
             .unwrap()
             .label("failures")
             .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
+        i = -1;
 
         chart
             .draw_series(LineSeries::new(
-                (range).enumerate().map(|(i, date)| {
+                (range).filter_map(|date| {
                     // There will always be a unique run per day
                     // FIXME: Right?
-                    let to_show = testsuites.iter().find(|run| run.date == date).unwrap();
+                    // There will always be a unique run per day
+                    // FIXME: Right?
+                    let to_show = testsuites.iter().find(|run| run.date == date)?;
+                    i += 1;
 
-                    (i, to_show.results.tests)
+                    Some((i as usize, to_show.results.tests))
                 }),
                 &BLACK,
             ))
             .unwrap()
-            .label("total test cases")
+            .label("amount of tests")
             .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &BLACK));
 
         chart
