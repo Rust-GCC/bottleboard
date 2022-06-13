@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use chrono::NaiveDate;
+use chrono::{Duration, NaiveDate};
 use plotters::prelude::*;
 use plotters_canvas::CanvasBackend;
 use wasm_rs_dbg::dbg;
@@ -74,66 +74,51 @@ impl CacheModel {
             .margin(5u32)
             .x_label_area_size(30u32)
             .y_label_area_size(30u32)
-            .build_cartesian_2d(0..testsuites.len(), limits)
+            .build_cartesian_2d(range.0..range.1 + Duration::days(1), limits)
             .unwrap();
 
         chart.configure_mesh().draw().unwrap();
-        let mut i = -1;
 
         chart
             .draw_series(LineSeries::new(
                 (range).filter_map(|date| {
-                    // There will always be a unique run per day
-                    // FIXME: Right?
-                    // There will always be a unique run per day
-                    // FIXME: Right?
+                    // This skips days which do not exist
                     let to_show = testsuites.iter().find(|run| run.date == date)?;
-                    i += 1;
 
-                    Some((i as usize, to_show.results.passes))
+                    Some((to_show.date, to_show.results.passes))
                 }),
                 &GREEN,
             ))
             .unwrap()
             .label("passes")
             .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &GREEN));
-        i = -1;
 
         chart
             .draw_series(LineSeries::new(
                 (range).filter_map(|date| {
-                    // There will always be a unique run per day
-                    // FIXME: Right?
-                    // There will always be a unique run per day
-                    // FIXME: Right?
+                    // This skips days which do not exist
                     let to_show = testsuites.iter().find(|run| run.date == date)?;
-                    i += 1;
 
-                    Some((i as usize, to_show.results.failures))
+                    Some((to_show.date, to_show.results.failures))
                 }),
                 &RED,
             ))
             .unwrap()
             .label("failures")
             .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
-        i = -1;
 
         chart
             .draw_series(LineSeries::new(
                 (range).filter_map(|date| {
-                    // There will always be a unique run per day
-                    // FIXME: Right?
-                    // There will always be a unique run per day
-                    // FIXME: Right?
+                    // This skips days which do not exist
                     let to_show = testsuites.iter().find(|run| run.date == date)?;
-                    i += 1;
 
-                    Some((i as usize, to_show.results.tests))
+                    Some((to_show.date, to_show.results.tests))
                 }),
                 &BLACK,
             ))
             .unwrap()
-            .label("amount of tests")
+            .label("number of tests")
             .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &BLACK));
 
         chart
