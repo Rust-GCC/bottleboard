@@ -1,9 +1,8 @@
 use std::ops::Range;
 
 use chrono::NaiveDate;
-use plotters::{coord::Shift, prelude::*};
+use plotters::prelude::*;
 use plotters_canvas::CanvasBackend;
-use wasm_bindgen::JsCast;
 use wasm_rs_dbg::dbg;
 
 use web_sys::HtmlCanvasElement;
@@ -188,8 +187,8 @@ impl Component for CacheModel {
 
     fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
         let canvas = self.canvas.cast::<HtmlCanvasElement>().unwrap();
-        canvas.set_width(500);
-        canvas.set_height(300);
+        canvas.set_width(720);
+        canvas.set_height(480);
 
         let backend: CanvasBackend = CanvasBackend::with_canvas_object(canvas).unwrap();
         self.graph(backend);
@@ -207,6 +206,8 @@ impl Component for CacheModel {
 
         html! {
             <div>
+                <h1> { "Rust-GCC testing dashboard" } </h1>
+                <p> { "Welcome! Here you'll find a collection of the results we're accumulating while testing our compiler on various test-suites" } </p>
                 <ul class="item-list">
                 { items }
                 </ul>
@@ -220,25 +221,10 @@ impl Component for CacheModel {
 fn app() -> Html {
     html! {
         <div>
-            <h3>{ "Hello there!" }</h3>
             <canvas id="canvas"
             width="500" height="300"></canvas>
         </div>
     }
-}
-
-fn get_root() -> DrawingArea<CanvasBackend, Shift> {
-    // FIXME: Don't unwrap
-    let document = web_sys::window().unwrap().document().unwrap();
-    let canvas = document.get_element_by_id("canvas").unwrap();
-    let canvas: web_sys::HtmlCanvasElement = canvas
-        .dyn_into::<web_sys::HtmlCanvasElement>()
-        .map_err(|_| ())
-        .unwrap();
-
-    CanvasBackend::with_canvas_object(canvas)
-        .unwrap()
-        .into_drawing_area()
 }
 
 #[derive(Clone, Copy)]
