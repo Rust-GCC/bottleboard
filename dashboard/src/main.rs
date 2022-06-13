@@ -42,13 +42,14 @@ enum CacheMsg {
     FetchKeys,
     UpdateKeys(Vec<String>),
     FetchKeyResult(String),
-    UpdateResults(Vec<TestsuiteResult>),
+    UpdateResults(String, Vec<TestsuiteResult>),
 }
 
 struct CacheModel {
     url: &'static str,
     canvas: NodeRef,
     keys: Vec<String>,
+    current_key: String,
     results: Vec<TestsuiteResult>,
 }
 
@@ -70,7 +71,7 @@ impl CacheModel {
         let limits = get_limits(testsuites);
 
         let mut chart = ChartBuilder::on(&root)
-            .caption("testsuites", ("sans-serif", 50).into_font())
+            .caption(&self.current_key, ("sans-serif", 50).into_font())
             .margin(5u32)
             .x_label_area_size(30u32)
             .y_label_area_size(30u32)
@@ -146,6 +147,7 @@ impl Component for CacheModel {
             url: "http://127.0.0.1:8000",
             canvas: NodeRef::default(),
             keys: vec![],
+            current_key: String::new(),
             results: vec![],
         }
     }
@@ -168,7 +170,7 @@ impl Component for CacheModel {
                     // FIXME: No unwrap
                     let results = fetch_results(&url, &key).await.unwrap();
                     dbg!(&results);
-                    CacheMsg::UpdateResults(results)
+                    CacheMsg::UpdateResults(key, results)
                 });
                 true
             }
@@ -176,14 +178,15 @@ impl Component for CacheModel {
                 self.keys = keys;
                 true
             }
-            CacheMsg::UpdateResults(results) => {
+            CacheMsg::UpdateResults(key, results) => {
                 self.results = results;
+                self.current_key = key;
                 true
             }
         }
     }
 
-    fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
+    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
         let canvas = self.canvas.cast::<HtmlCanvasElement>().unwrap();
         canvas.set_width(500);
         canvas.set_height(300);
