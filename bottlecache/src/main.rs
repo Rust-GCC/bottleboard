@@ -1,13 +1,14 @@
 mod cache;
 mod error;
-mod json;
 
 use cache::Cache;
 use chrono::NaiveDate;
-use json::TestsuiteResult;
+use itertools::Itertools;
 use rocket::{request::FromParam, serde::json::Json, State};
 use structopt::StructOpt;
 use tokio::sync::Mutex;
+
+use common::TestsuiteResult;
 
 #[derive(StructOpt, Debug)]
 pub struct Args {
@@ -59,13 +60,13 @@ async fn testsuite_by_key_date(
 }
 
 #[rocket::get("/api/testsuites")]
-async fn testsuites(state: &State<Mutex<Cache>>) -> Json<Vec<TestsuiteResult>> {
+async fn testsuites(state: &State<Mutex<Cache>>) -> Json<Vec<String>> {
     // FIXME: Can we unwrap here?
     // FIXME: Can we improve this error handling?
     let mut cache = state.inner().lock().await;
     let data = cache.data().await.expect("could not fetch data");
 
-    Json(data.into_iter().collect())
+    Json(data.into_iter().map(|run| run.name).unique().collect())
 }
 
 #[rocket::launch]
@@ -77,7 +78,11 @@ async fn rocket() -> _ {
 
     let cache = Mutex::new(cache);
 
+    // FIXME: Should we unwrap here?
+    let cors = rocket_cors::CorsOptions::default().to_cors().unwrap();
+
     rocket::build()
+        .attach(cors)
         .mount(
             "/",
             rocket::routes![testsuites, testsuite_by_key, testsuite_by_key_date],
