@@ -4,6 +4,7 @@ use std::collections::HashSet;
 use std::time::{SystemTime, SystemTimeError};
 
 use chrono::Duration;
+use log::{debug, info, warn};
 use octocrab::models::RunId;
 use thiserror::Error;
 
@@ -57,25 +58,27 @@ impl Cache {
             .filter(|run| !self.cached_runs.contains(run))
             .collect();
 
-        dbg!(&runs);
+        debug!("{:#?}", runs);
 
         let archives = self.fetcher.result_files(&runs).await?;
 
         for (run, archive) in archives {
             let bytes = artifact::extract_json(archive).await?;
-            dbg!(String::from_utf8_lossy(bytes.as_slice()));
+
+            debug!("{}", String::from_utf8_lossy(&bytes));
+
             let json = TestsuiteResult::from_bytes(bytes.as_slice());
 
             match json {
                 Ok(json) => {
-                    eprintln!(
-                        "valid json: {} ({}) ! Storing in cache",
+                    info!(
+                        "valid json: {} ({})! Storing in cache",
                         json.name, json.date
                     );
                     self.cached_data.insert(json);
                     self.cached_runs.insert(run);
                 }
-                Err(e) => eprintln!("invalid json file... skipping it. Reason: `{}`", e),
+                Err(e) => warn!("invalid json file... skipping it. Reason: `{}`", e),
             }
         }
 
@@ -86,10 +89,10 @@ impl Cache {
 
     pub async fn data(&mut self) -> Result<HashSet<TestsuiteResult>, CacheError> {
         if self.is_invalidated()? {
-            eprintln!("updating cache");
+            info!("updating cache");
             self.update().await?;
         } else {
-            eprintln!("return cached data!");
+            info!("return cached data!");
         }
 
         // UNWRAP: We can safely unwrap here as our data is updated. If there is
