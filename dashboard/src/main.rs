@@ -215,16 +215,6 @@ impl Component for CacheModel {
     }
 }
 
-#[function_component(App)]
-fn app() -> Html {
-    html! {
-        <div>
-            <canvas id="canvas"
-            width="500" height="300"></canvas>
-        </div>
-    }
-}
-
 #[derive(Clone, Copy)]
 struct DateRange(NaiveDate, NaiveDate);
 
