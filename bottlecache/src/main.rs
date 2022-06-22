@@ -72,6 +72,7 @@ async fn testsuites(state: &State<Mutex<Cache>>) -> Json<Vec<String>> {
 #[rocket::launch]
 async fn rocket() -> _ {
     let args = Args::from_args();
+    env_logger::init();
 
     let mut cache = Cache::try_new(args.token).expect("couldn't create cache");
     cache.data().await.expect("couldn't fetch initial cache");
