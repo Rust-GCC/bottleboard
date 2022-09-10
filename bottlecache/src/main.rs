@@ -42,6 +42,24 @@ async fn testsuite_by_key(state: &State<Mutex<Cache>>, key: &str) -> Json<Vec<Te
     Json(data.into_iter().filter(|json| json.name == key).collect())
 }
 
+#[rocket::get("/api/runs/<date>")]
+async fn runs_by_date(
+    state: &State<Mutex<Cache>>,
+    date: NaiveDateRequest,
+) -> Json<Vec<TestsuiteResult>> {
+    // FIXME: Can we unwrap here?
+    // FIXME: Can we improve this error handling?
+    let mut cache = state.inner().lock().await;
+    let data = cache.data().await.expect("could not fetch data");
+
+    // There is only one run per testsuite per day
+    Json(
+        data.into_iter()
+            .filter(|json| json.date == date.0)
+            .collect(),
+    )
+}
+
 #[rocket::get("/api/testsuites/<key>/<date>")]
 async fn testsuite_by_key_date(
     state: &State<Mutex<Cache>>,
@@ -86,7 +104,12 @@ async fn rocket() -> _ {
         .attach(cors)
         .mount(
             "/",
-            rocket::routes![testsuites, testsuite_by_key, testsuite_by_key_date],
+            rocket::routes![
+                testsuites,
+                testsuite_by_key,
+                runs_by_date,
+                testsuite_by_key_date
+            ],
         )
         .manage(cache)
 }
