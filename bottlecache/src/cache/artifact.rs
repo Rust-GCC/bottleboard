@@ -1,4 +1,7 @@
-use std::io::{BufReader, Cursor};
+use std::{
+    io::{BufReader, Cursor},
+    path::Path,
+};
 
 use octocrab::{
     actions::ActionsHandler,
@@ -63,7 +66,11 @@ impl Fetcher {
             let list = actions.list_workflow_run_artifacts("rust-gcc", "testing", *run);
             if let Some(page) = list.send().await?.value {
                 for artifact in page {
-                    if artifact.name.ends_with(".json") {
+                    let path = Path::new(&artifact.name);
+                    if path
+                        .extension()
+                        .map_or(false, |ext| ext.eq_ignore_ascii_case("json"))
+                    {
                         archives.push((*run, download_artifact(&actions, artifact.id).await?));
                     }
                 }
@@ -74,7 +81,7 @@ impl Fetcher {
     }
 }
 
-pub async fn extract_json(artifact: Archive) -> Result<Vec<u8>, zip::result::ZipError> {
+pub fn extract_json(artifact: Archive) -> Result<Vec<u8>, zip::result::ZipError> {
     let reader = BufReader::new(Cursor::new(artifact.0));
     let mut zip = zip::ZipArchive::new(reader)?;
 
