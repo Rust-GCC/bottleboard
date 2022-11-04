@@ -13,7 +13,7 @@ use common::TestsuiteResult;
 use self::artifact::Fetcher;
 
 #[derive(Debug, Error)]
-pub enum CacheError {
+pub enum Error {
     #[error("couldn't fetch file creation date")]
     FileCreationDate(#[from] SystemTimeError),
     #[error("error when using github API: {0}")]
@@ -42,7 +42,7 @@ impl Cache {
         })
     }
 
-    fn is_invalidated(&self) -> Result<bool, CacheError> {
+    fn is_invalidated(&self) -> Result<bool, Error> {
         let now = SystemTime::now();
         let age = now.duration_since(self.last_date)?;
 
@@ -51,7 +51,7 @@ impl Cache {
         Ok(age > Duration::hours(24).to_std().unwrap())
     }
 
-    async fn update(&mut self) -> Result<(), CacheError> {
+    async fn update(&mut self) -> Result<(), Error> {
         let runs = self.fetcher.runs().await?;
         let runs: Vec<RunId> = runs
             .into_iter()
@@ -63,7 +63,7 @@ impl Cache {
         let archives = self.fetcher.result_files(&runs).await?;
 
         for (run, archive) in archives {
-            let bytes = artifact::extract_json(archive).await?;
+            let bytes = artifact::extract_json(archive)?;
 
             debug!("{}", String::from_utf8_lossy(&bytes));
 
@@ -87,7 +87,7 @@ impl Cache {
         Ok(())
     }
 
-    pub async fn data(&mut self) -> Result<HashSet<TestsuiteResult>, CacheError> {
+    pub async fn data(&mut self) -> Result<HashSet<TestsuiteResult>, Error> {
         if self.is_invalidated()? {
             info!("updating cache");
             self.update().await?;

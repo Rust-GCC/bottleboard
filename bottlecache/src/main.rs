@@ -50,11 +50,11 @@ async fn runs_by_date(
     // FIXME: Can we unwrap here?
     // FIXME: Can we improve this error handling?
     let mut cache = state.inner().lock().await;
-    let data = cache.data().await.expect("could not fetch data");
+    let runs = cache.data().await.expect("could not fetch data");
 
     // There is only one run per testsuite per day
     Json(
-        data.into_iter()
+        runs.into_iter()
             .filter(|json| json.date == date.0)
             .collect(),
     )
@@ -69,10 +69,10 @@ async fn testsuite_by_key_date(
     // FIXME: Can we unwrap here?
     // FIXME: Can we improve this error handling?
     let mut cache = state.inner().lock().await;
-    let data = cache.data().await.expect("could not fetch data");
+    let runs = cache.data().await.expect("could not fetch data");
 
     Json(
-        data.into_iter()
+        runs.into_iter()
             .find(|json| json.name == key && json.date == date.0),
     )
 }
