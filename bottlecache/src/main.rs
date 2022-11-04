@@ -19,6 +19,11 @@ pub struct Args {
     token: Option<String>,
     #[structopt(short, long, help = "Location in which to store the cached JSON files")]
     cache: Option<PathBuf>,
+    #[structopt(
+        long,
+        help = "Create a mocked instance of bottlecache, which only serves runs from disk"
+    )]
+    mock: bool,
 }
 
 struct NaiveDateRequest(NaiveDate);
@@ -108,7 +113,8 @@ async fn rocket() -> _ {
     let args = Args::from_args();
     env_logger::init();
 
-    let mut cache = Cache::try_new(args.token, args.cache).expect("couldn't create cache");
+    let mut cache =
+        Cache::try_new(args.token, args.cache, args.mock).expect("couldn't create cache");
     cache.data().await.expect("couldn't fetch initial cache");
 
     let cache = Mutex::new(cache);
