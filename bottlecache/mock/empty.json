@@ -1,0 +1,10 @@
+{
+  "name": "empty",
+  "commit": "",
+  "date": "0001-01-01",
+  "results": {
+    "tests": 0,
+    "passes": 0,
+    "failures": 0,
+  }
+}
