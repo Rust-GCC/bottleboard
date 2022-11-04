@@ -1,7 +1,7 @@
 mod artifact;
 
 use std::collections::HashSet;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::{SystemTime, SystemTimeError};
 use std::{fs, io};
 
@@ -38,16 +38,36 @@ pub struct Cache {
 }
 
 impl Cache {
+    fn fill_cache_from_dir(path: &Path) -> Result<HashSet<TestsuiteResult>, Error> {
+        // The cache is as restrictive as possible, so if a file is malformed or not completely
+        // valid JSON we just skip it
+        let existing_cache = fs::read_dir(path)?
+            .map(|entry| fs::read_to_string(entry?.path()))
+            .filter_map(Result::ok)
+            .map(|s| serde_json::from_str(&s))
+            .filter_map(Result::ok)
+            .collect::<HashSet<TestsuiteResult>>();
+
+        Ok(existing_cache)
+    }
+
     pub fn try_new(token: Option<String>, location: Option<PathBuf>) -> Result<Cache, Error> {
-        if let Some(path) = &location {
-            fs::create_dir_all(path)?;
-        }
+        let cached_data = if let Some(path) = &location {
+            if path.exists() {
+                Cache::fill_cache_from_dir(path)?
+            } else {
+                fs::create_dir_all(path)?;
+                HashSet::new()
+            }
+        } else {
+            HashSet::new()
+        };
 
         Ok(Cache {
             location,
             fetcher: Fetcher::try_new(token)?,
             last_date: SystemTime::UNIX_EPOCH,
-            cached_data: HashSet::new(),
+            cached_data,
             cached_runs: HashSet::new(),
         })
     }
