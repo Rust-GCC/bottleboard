@@ -1,6 +1,8 @@
 mod cache;
 mod error;
 
+use std::collections::HashSet;
+
 use cache::Cache;
 use chrono::NaiveDate;
 use itertools::Itertools;
@@ -60,6 +62,17 @@ async fn runs_by_date(
     )
 }
 
+#[rocket::get("/api/dates")]
+async fn all_run_dates(state: &State<Mutex<Cache>>) -> Json<HashSet<NaiveDate>> {
+    let mut cache = state.inner().lock().await;
+    let runs = cache.data().await.expect("could not fetch data");
+
+    Json(runs.into_iter().fold(HashSet::new(), |mut set, run| {
+        set.insert(run.date);
+        set
+    }))
+}
+
 #[rocket::get("/api/testsuites/<key>/<date>")]
 async fn testsuite_by_key_date(
     state: &State<Mutex<Cache>>,
@@ -108,6 +121,7 @@ async fn rocket() -> _ {
                 testsuites,
                 testsuite_by_key,
                 runs_by_date,
+                all_run_dates,
                 testsuite_by_key_date
             ],
         )
