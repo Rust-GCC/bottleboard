@@ -46,7 +46,12 @@ impl Cache {
         // The cache is as restrictive as possible, so if a file is malformed or not completely
         // valid JSON we just skip it
         let existing_cache = fs::read_dir(path)?
-            .map(|entry| fs::read_to_string(entry?.path()))
+            .map(|entry| {
+                let path = entry?.path();
+                info!("reading from {}...", path.display());
+
+                fs::read_to_string(path)
+            })
             .filter_map(Result::ok)
             .map(|s| serde_json::from_str(&s))
             .filter_map(Result::ok)
