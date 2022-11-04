@@ -244,7 +244,7 @@ fn get_date_range(testsuites: &[TestsuiteResult]) -> DateRange {
     for run in testsuites.iter() {
         if run.date < lo {
             lo = run.date;
-        };
+        }
         if run.date > hi {
             hi = run.date;
         }
@@ -260,7 +260,7 @@ fn get_limits(testsuites: &[TestsuiteResult]) -> Range<u64> {
         .map(|run| run.results.tests)
         .max()
         .unwrap()
-        + 1 // for extra comfortable viewing
+        + 1
 }
 
 fn main() {
