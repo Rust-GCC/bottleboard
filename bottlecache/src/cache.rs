@@ -1,7 +1,9 @@
 mod artifact;
 
 use std::collections::HashSet;
+use std::path::PathBuf;
 use std::time::{SystemTime, SystemTimeError};
+use std::{fs, io};
 
 use chrono::Duration;
 use log::{debug, info, warn};
@@ -21,11 +23,14 @@ pub enum Error {
     #[error("error when extracting archive: {0}")]
     Unzipping(#[from] zip::result::ZipError),
     #[error("writing to disk failed: {0}")]
-    Disk(#[from] std::io::Error),
+    Disk(#[from] io::Error),
 }
 
 // FIXME: We probably want to keep the last variation in a cache type or something
+/// Cache for CI runs
 pub struct Cache {
+    /// Location of the cache on the disk
+    location: Option<PathBuf>,
     fetcher: Fetcher,
     last_date: SystemTime,
     cached_data: HashSet<TestsuiteResult>,
@@ -33,8 +38,13 @@ pub struct Cache {
 }
 
 impl Cache {
-    pub fn try_new(token: String) -> Result<Cache, octocrab::Error> {
+    pub fn try_new(token: Option<String>, location: Option<PathBuf>) -> Result<Cache, Error> {
+        if let Some(path) = &location {
+            fs::create_dir_all(path)?;
+        }
+
         Ok(Cache {
+            location,
             fetcher: Fetcher::try_new(token)?,
             last_date: SystemTime::UNIX_EPOCH,
             cached_data: HashSet::new(),
@@ -49,6 +59,16 @@ impl Cache {
         // UNWRAP: If we have an issue here, this is a programmer error: We want
         // the program to crash as this should never happen
         Ok(age > Duration::hours(24).to_std().unwrap())
+    }
+
+    fn try_write(&self, json: &TestsuiteResult) -> Result<(), io::Error> {
+        match &self.location {
+            Some(path) => {
+                let path = path.join(&json.name).with_extension("json");
+                fs::write(path, serde_json::to_string_pretty(json)?)
+            }
+            None => Ok(()),
+        }
     }
 
     async fn update(&mut self) -> Result<(), Error> {
@@ -75,6 +95,8 @@ impl Cache {
                         "valid json: {} ({})! Storing in cache",
                         json.name, json.date
                     );
+                    self.try_write(&json)?;
+
                     self.cached_data.insert(json);
                     self.cached_runs.insert(run);
                 }
