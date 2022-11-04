@@ -2,6 +2,7 @@ mod cache;
 mod error;
 
 use std::collections::HashSet;
+use std::path::PathBuf;
 
 use cache::Cache;
 use chrono::NaiveDate;
@@ -16,6 +17,8 @@ use common::TestsuiteResult;
 pub struct Args {
     #[structopt(short, long, help = "Personal access token if available")]
     token: Option<String>,
+    #[structopt(short, long, help = "Location in which to store the cached JSON files")]
+    cache: Option<PathBuf>,
 }
 
 struct NaiveDateRequest(NaiveDate);
@@ -105,7 +108,7 @@ async fn rocket() -> _ {
     let args = Args::from_args();
     env_logger::init();
 
-    let mut cache = Cache::try_new(args.token).expect("couldn't create cache");
+    let mut cache = Cache::try_new(args.token, args.cache).expect("couldn't create cache");
     cache.data().await.expect("couldn't fetch initial cache");
 
     let cache = Mutex::new(cache);
