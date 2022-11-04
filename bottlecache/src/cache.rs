@@ -35,6 +35,10 @@ pub struct Cache {
     last_date: SystemTime,
     cached_data: HashSet<TestsuiteResult>,
     cached_runs: HashSet<RunId>,
+    /// If we are in `mock` mode, then the cache never invalidates and never updates
+    /// It will always return what it currently contains. This implies that you
+    /// should give a valid location to this cache instance
+    mock: bool,
 }
 
 impl Cache {
@@ -51,7 +55,11 @@ impl Cache {
         Ok(existing_cache)
     }
 
-    pub fn try_new(token: Option<String>, location: Option<PathBuf>) -> Result<Cache, Error> {
+    pub fn try_new(
+        token: Option<String>,
+        location: Option<PathBuf>,
+        mock: bool,
+    ) -> Result<Cache, Error> {
         let cached_data = if let Some(path) = &location {
             if path.exists() {
                 Cache::fill_cache_from_dir(path)?
@@ -69,16 +77,21 @@ impl Cache {
             last_date: SystemTime::UNIX_EPOCH,
             cached_data,
             cached_runs: HashSet::new(),
+            mock,
         })
     }
 
     fn is_invalidated(&self) -> Result<bool, Error> {
-        let now = SystemTime::now();
-        let age = now.duration_since(self.last_date)?;
+        if self.mock {
+            Ok(false) // the cache is always valid
+        } else {
+            let now = SystemTime::now();
+            let age = now.duration_since(self.last_date)?;
 
-        // UNWRAP: If we have an issue here, this is a programmer error: We want
-        // the program to crash as this should never happen
-        Ok(age > Duration::hours(24).to_std().unwrap())
+            // UNWRAP: If we have an issue here, this is a programmer error: We want
+            // the program to crash as this should never happen
+            Ok(age > Duration::hours(24).to_std().unwrap())
+        }
     }
 
     fn try_write(&self, json: &TestsuiteResult) -> Result<(), io::Error> {
