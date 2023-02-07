@@ -12,8 +12,8 @@ use common::TestsuiteResult;
 
 #[derive(StructOpt, Debug)]
 pub struct Args {
-    #[structopt(short, long, help = "Personal access token if available")]
-    token: Option<String>,
+    #[structopt(short, long, help = "Personal access token")]
+    token: String,
 }
 
 struct NaiveDateRequest(NaiveDate);
