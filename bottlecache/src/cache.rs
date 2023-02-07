@@ -33,7 +33,7 @@ pub struct Cache {
 }
 
 impl Cache {
-    pub fn try_new(token: Option<String>) -> Result<Cache, octocrab::Error> {
+    pub fn try_new(token: String) -> Result<Cache, octocrab::Error> {
         Ok(Cache {
             fetcher: Fetcher::try_new(token)?,
             last_date: SystemTime::UNIX_EPOCH,

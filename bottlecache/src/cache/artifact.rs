@@ -29,12 +29,9 @@ async fn download_artifact(
 }
 
 impl Fetcher {
-    pub fn try_new(access_token: Option<String>) -> Result<Fetcher, octocrab::Error> {
+    pub fn try_new(access_token: String) -> Result<Fetcher, octocrab::Error> {
         let builder = OctocrabBuilder::new();
-        let builder = match access_token {
-            None => builder,
-            Some(tok) => builder.personal_token(tok),
-        };
+        let builder = builder.personal_token(access_token);
 
         let instance = builder.build()?;
 

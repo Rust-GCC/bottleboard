@@ -36,7 +36,7 @@ First, deploy the cache:
 # cargo run -- --token <github access token>
 ```
 
-The github token access is optional, but you will run out of API requests extremely fast.
+The github token access is required.
 
 The API is available on port 8000 of your local machine.
 
