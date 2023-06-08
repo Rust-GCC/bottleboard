@@ -1,0 +1,1 @@
+{ "name": "gccrs-rustc-success-no-std", "commit": "ddde0cfaa", "date": "2023-04-19", "results": { "tests": 2578, "passes": 749, "failures": 1829 }}
