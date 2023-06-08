@@ -102,7 +102,9 @@ impl Cache {
     fn try_write(&self, json: &TestsuiteResult) -> Result<(), io::Error> {
         match &self.location {
             Some(path) => {
-                let path = path.join(&json.name).with_extension("json");
+                let path = path
+                    .join(format!("{}-{}", &json.name, json.date.format("%Y-%m-%d")))
+                    .with_extension("json");
                 fs::write(path, serde_json::to_string_pretty(json)?)
             }
             None => Ok(()),
@@ -138,7 +140,10 @@ impl Cache {
                     self.cached_data.insert(json);
                     self.cached_runs.insert(run);
                 }
-                Err(e) => warn!("invalid json file... skipping it. Reason: `{}`", e),
+                Err(e) => warn!(
+                    "invalid json file downloaded from github... skipping it. Reason: `{}`",
+                    e
+                ),
             }
         }
 
