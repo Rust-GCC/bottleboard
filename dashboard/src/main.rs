@@ -210,6 +210,9 @@ impl Component for CacheModel {
                 { items }
                 </ul>
                 <canvas ref={ self.canvas.clone() } />
+                <div class="footer">
+                <p>{"Made in Rust with"}<a href="https://github.com/yewstack/yew" target="_blank">{" Yew"}</a></p>
+                </div>
             </div>
         }
     }
