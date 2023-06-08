@@ -22,7 +22,7 @@ impl From<reqwasm::Error> for Error {
 }
 
 async fn fetch_testsuites(base_url: &str) -> Result<Vec<String>, reqwasm::Error> {
-    let url = format!("{}/api/testsuites", base_url);
+    let url = format!("{base_url}/api/testsuites");
     let response = reqwasm::http::Request::get(&url).send().await?;
     let testsuites: Vec<String> = response.json().await?;
 
@@ -30,7 +30,7 @@ async fn fetch_testsuites(base_url: &str) -> Result<Vec<String>, reqwasm::Error>
 }
 
 async fn fetch_results(base_url: &str, key: &str) -> Result<Vec<TestsuiteResult>, reqwasm::Error> {
-    let url = format!("{}/api/testsuites/{}", base_url, key);
+    let url = format!("{base_url}/api/testsuites/{key}");
     let response = reqwasm::http::Request::get(&url).send().await?;
     let testsuites: Vec<TestsuiteResult> = response.json().await?;
 
@@ -81,31 +81,31 @@ impl CacheModel {
 
         chart
             .draw_series(LineSeries::new(
-                (range).filter_map(|date| {
+                (range.clone()).filter_map(|date| {
                     // This skips days which do not exist
                     let to_show = testsuites.iter().find(|run| run.date == date)?;
 
                     Some((to_show.date, to_show.results.passes))
                 }),
-                &GREEN,
+                GREEN,
             ))
             .unwrap()
             .label("passes")
-            .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &GREEN));
+            .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], GREEN));
 
         chart
             .draw_series(LineSeries::new(
-                (range).filter_map(|date| {
+                (range.clone()).filter_map(|date| {
                     // This skips days which do not exist
                     let to_show = testsuites.iter().find(|run| run.date == date)?;
 
                     Some((to_show.date, to_show.results.failures))
                 }),
-                &RED,
+                RED,
             ))
             .unwrap()
             .label("failures")
-            .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
+            .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], RED));
 
         chart
             .draw_series(LineSeries::new(
@@ -115,16 +115,16 @@ impl CacheModel {
 
                     Some((to_show.date, to_show.results.tests))
                 }),
-                &BLACK,
+                BLACK,
             ))
             .unwrap()
             .label("number of tests")
-            .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &BLACK));
+            .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], BLACK));
 
         chart
             .configure_series_labels()
-            .background_style(&WHITE.mix(0.8))
-            .border_style(&BLACK)
+            .background_style(WHITE.mix(0.8))
+            .border_style(BLACK)
             .draw()
             .unwrap();
     }
@@ -218,7 +218,7 @@ impl Component for CacheModel {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct DateRange(NaiveDate, NaiveDate);
 
 impl Iterator for DateRange {
@@ -227,7 +227,7 @@ impl Iterator for DateRange {
     fn next(&mut self) -> Option<Self::Item> {
         if self.0 <= self.1 {
             let next = self.0;
-            self.0 = next.succ();
+            self.0 = next.succ_opt()?;
 
             Some(next)
         } else {
@@ -241,14 +241,14 @@ fn get_date_range(testsuites: &[TestsuiteResult]) -> DateRange {
     let mut lo: NaiveDate = testsuites[0].date;
     let mut hi: NaiveDate = testsuites[0].date;
 
-    testsuites.iter().for_each(|run| {
+    for run in testsuites.iter() {
         if run.date < lo {
-            lo = run.date
+            lo = run.date;
         };
         if run.date > hi {
-            hi = run.date
+            hi = run.date;
         }
-    });
+    }
 
     DateRange(lo, hi)
 }
@@ -266,5 +266,5 @@ fn get_limits(testsuites: &[TestsuiteResult]) -> Range<u64> {
 fn main() {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
-    yew::start_app::<CacheModel>();
+    yew::Renderer::<CacheModel>::new().render();
 }
