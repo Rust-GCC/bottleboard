@@ -1,0 +1,1 @@
+{ "name": "rustc-dejagnu", "commit": "f749a7fa0", "date": "2023-04-05", "results": { "tests": 809, "passes": 500, "failures": 309 }}
