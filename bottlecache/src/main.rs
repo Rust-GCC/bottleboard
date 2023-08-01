@@ -15,8 +15,8 @@ use common::TestsuiteResult;
 
 #[derive(StructOpt, Debug)]
 pub struct Args {
-    #[structopt(short, long, help = "Personal access token if available")]
-    token: Option<String>,
+    #[structopt(short, long, help = "Personal access token")]
+    token: String,
     #[structopt(short, long, help = "Location in which to store the cached JSON files")]
     cache: Option<PathBuf>,
     #[structopt(

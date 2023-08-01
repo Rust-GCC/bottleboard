@@ -60,11 +60,7 @@ impl Cache {
         Ok(existing_cache)
     }
 
-    pub fn try_new(
-        token: Option<String>,
-        location: Option<PathBuf>,
-        mock: bool,
-    ) -> Result<Cache, Error> {
+    pub fn try_new(token: String, location: Option<PathBuf>, mock: bool) -> Result<Cache, Error> {
         let cached_data = if let Some(path) = &location {
             if path.exists() {
                 Cache::fill_cache_from_dir(path)?
