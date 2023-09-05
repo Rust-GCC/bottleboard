@@ -7,7 +7,7 @@ edition = "2021"
 rocket = { version = "0.5.0-rc.3", features = ["json"] }
 rocket_cors = "0.6.0-alpha2"
 tokio = { version = "1.28", features = ["full"] }
-octocrab = "0.25"
+octocrab = "0.30"
 tokio-cron-scheduler = "0.9"
 anyhow = "1.0"
 thiserror = "1.0"
