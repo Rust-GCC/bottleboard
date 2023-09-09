@@ -1,6 +1,7 @@
 use std::ops::Range;
 
 use chrono::{Duration, NaiveDate};
+use clap::Parser;
 use plotters::prelude::*;
 use plotters_canvas::CanvasBackend;
 use wasm_rs_dbg::dbg;
@@ -9,6 +10,13 @@ use web_sys::HtmlCanvasElement;
 use yew::prelude::*;
 
 use common::TestsuiteResult;
+
+#[derive(Parser, Debug)]
+#[clap(author, version)]
+struct Args {
+    #[clap(short, long, default_value = "http://127.0.0.1")]
+    api_url: String,
+}
 
 #[derive(Debug, Clone)]
 enum Error {
@@ -265,6 +273,8 @@ fn get_limits(testsuites: &[TestsuiteResult]) -> Range<u64> {
 
 fn main() {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+    let args = Args::parse();
+    dbg!(args);
 
     yew::Renderer::<CacheModel>::new().render();
 }
